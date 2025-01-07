@@ -116,9 +116,14 @@ const execute = async (interaction: MessageContextMenuCommandInteraction) => {
 
     // Save logs to database
     const user = interaction.user.tag;
+    const newLog: typeof logs_table.$inferInsert = {
+        user,
+        date,
+    };
+
     let currentDate = await db
         .insert(logs_table)
-        .values({ user, date })
+        .values(newLog)
         .returning({ id: logs_table.id })
         .execute()
         .then((result) => result[0]);

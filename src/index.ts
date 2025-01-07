@@ -1,5 +1,5 @@
 import { configDotenv } from "dotenv";
-import { commands } from "./commands";
+import { commands } from "./commands/index";
 import { Client, MessageFlags, REST, Routes } from "discord.js";
 
 configDotenv();

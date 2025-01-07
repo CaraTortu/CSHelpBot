@@ -3,15 +3,17 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
+    "build": "tsc --build && tsc-alias && cp .env dist/src/.env",
+    "clean": "tsc --build --clean && tsc-alias && cp .env dist/src/.env",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
   },
   "devDependencies": {
-    "@types/bun": "latest",
     "@types/pg": "^8.11.10",
     "drizzle-kit": "^0.28.1",
+    "tsc-alias": "1.8.10",
     "tsx": "^4.19.2"
   },
   "peerDependencies": {

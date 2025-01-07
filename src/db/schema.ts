@@ -11,7 +11,7 @@ const newTable = pgTableCreator((table) => `discord_bot_${table}`);
 
 export const logs = newTable("logs", {
     id: uuid("id").defaultRandom().primaryKey(),
-    date: timestamp("date").defaultNow(),
+    date: timestamp("date").notNull(),
     user: varchar("user", { length: 255 }).notNull(),
 });
 
