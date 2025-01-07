@@ -12,3 +12,12 @@ To run:
 bun run index.ts
 ```
 
+## Compilation
+
+In the case of wanting to run using node
+
+```bash
+npm run build
+npm run run
+```
+
