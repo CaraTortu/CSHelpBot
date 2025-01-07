@@ -3,8 +3,8 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "tsc --build && tsc-alias && cp .env dist/src/.env",
-    "clean": "tsc --build --clean && tsc-alias && cp .env dist/src/.env",
+    "run": "node dist/src/index.js",
+    "build": "tsc --build && tsc-alias",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
