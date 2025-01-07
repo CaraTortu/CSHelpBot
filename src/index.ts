@@ -1,6 +1,6 @@
 import { env } from "bun";
 import { commands } from "./commands";
-import { Client, REST, Routes } from "discord.js";
+import { Client, MessageFlags, REST, Routes } from "discord.js";
 
 const { DISCORD_TOKEN, DISCORD_CLIENT_ID } = env;
 
@@ -24,26 +24,28 @@ client.once("ready", async () => {
     console.log("Registering commands...");
 
     try {
-        await rest.put(
-            Routes.applicationCommands(DISCORD_CLIENT_ID),
-            { body: commands.map(({ cmd }) => cmd) },
-        );
+        await rest.put(Routes.applicationCommands(DISCORD_CLIENT_ID), {
+            body: commands.map(({ cmd }) => cmd),
+        });
     } catch (error) {
         console.error(error);
         client.destroy();
     }
 
     console.log("Ready!");
-})
+});
 
 /**
  * Handle command interactions
  */
 
 client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isCommand() && !interaction.isUserContextMenuCommand()) return;
+    if (!interaction.isCommand() && !interaction.isUserContextMenuCommand())
+        return;
 
-    const command = commands.find(({ cmd }) => cmd.name === interaction.commandName);
+    const command = commands.find(
+        ({ cmd }) => cmd.name === interaction.commandName,
+    );
     if (!command) return;
 
     try {
@@ -51,9 +53,11 @@ client.on("interactionCreate", async (interaction) => {
         await command.execute(interaction);
     } catch (error) {
         console.error(error);
-        await interaction.reply({ content: "There was an error while executing this command!", ephemeral: true });
+        await interaction.reply({
+            content: "There was an error while executing this command!",
+            flags: MessageFlags.Ephemeral,
+        });
     }
 });
-
 
 client.login(DISCORD_TOKEN);

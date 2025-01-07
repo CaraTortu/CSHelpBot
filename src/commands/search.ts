@@ -1,80 +1,123 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+    ChatInputCommandInteraction,
+    MessageFlags,
+    SlashCommandBuilder,
+    type APIEmbedField,
+} from "discord.js";
 import type { Command } from ".";
 import { db } from "../db";
 import { logEntries, logs } from "../db/schema";
 import { eq, like } from "drizzle-orm";
 import { stringToDate } from "../utils";
+import { Pagination } from "pagination.djs";
 
-const CHOICES: { name: string, value: string }[] = [
+const CHOICES: { name: string; value: string }[] = [
     { name: "Date", value: "date" },
     { name: "Module", value: "module" },
-]
+];
 
 const cmd = new SlashCommandBuilder()
-    .addStringOption(option =>
+    .addStringOption((option) =>
         option
             .addChoices(CHOICES)
             .setName("query")
             .setDescription("The query to search for")
-            .setRequired(true))
-    .addStringOption(option =>
+            .setRequired(true),
+    )
+    .addStringOption((option) =>
         option
             .setName("value")
             .setDescription("The value to search for")
-            .setRequired(true))
+            .setRequired(true),
+    )
     .setName("search")
     .setDescription("Search for a log entry");
 
-const dateSearch = async (interaction: CommandInteraction, value: string) => {
+const dateSearch = async (
+    interaction: ChatInputCommandInteraction,
+    value: string,
+) => {
     const date = stringToDate(value);
 
     if (isNaN(date.getTime())) {
-        await interaction.reply({ content: "Invalid date! Please make sure the format is DD/MM/YYYY", ephemeral: true });
+        await interaction.reply({
+            content: "Invalid date! Please make sure the format is DD/MM/YYYY",
+            flags: MessageFlags.Ephemeral,
+        });
         return;
     }
 
-    const logs_found = await db.select().from(logs).where(eq(logs.date, date)).execute();
+    const log = await db.query.logs.findFirst({
+        where: eq(logs.date, date),
+        with: { log_entries: true },
+    });
 
-    if (logs_found.length === 0) {
-        await interaction.reply({ content: `No logs found for ${date.toDateString()}`, ephemeral: true });
+    if (!log) {
+        await interaction.reply({
+            content: `No logs found for ${date.toDateString()}`,
+            flags: MessageFlags.Ephemeral,
+        });
         return;
     }
 
-    // Found logs, let's search the entries 
-    const entries = await db.select().from(logEntries).where(eq(logEntries.log_id, logs_found[0].id)).execute();
+    const pagination = new Pagination(interaction, {
+        limit: 5,
+        loop: true,
+    });
 
-    let response = `Found ${entries.length} entries for ${date.toDateString()}\`\`\`md\n`;
+    pagination.setTitle(`Entries for ${date.toDateString()}`);
 
-    for (const entry of entries) {
-        response += `## ${entry.subject}\n${entry.body}\n\n`;
-    }
+    const fields: APIEmbedField[] = log.log_entries.map((entry) => ({
+        name: entry.subject,
+        value: entry.body,
+    }));
 
-    response += "```";
+    pagination.setFields(fields);
+    pagination.paginateFields();
+    pagination.render();
+};
 
-    await interaction.reply({ content: response, ephemeral: true });
-}
-
-const moduleSearch = async (interaction: CommandInteraction, value: string) => {
-    const entries = await db.select().from(logEntries).where(like(logEntries.subject, `%${value}%`)).execute();
+const moduleSearch = async (
+    interaction: ChatInputCommandInteraction,
+    value: string,
+) => {
+    const entries = await db.query.logEntries.findMany({
+        where: like(logEntries.subject, `%${value}%`),
+        with: { log: true },
+    });
 
     if (entries.length === 0) {
-        await interaction.reply({ content: `No logs found for ${value}`, ephemeral: true });
+        await interaction.reply({
+            content: `No logs found for ${value}`,
+            flags: MessageFlags.Ephemeral,
+        });
         return;
     }
 
-    let response = `Found ${entries.length} entries for ${value}\`\`\`md\n`;
+    // Sort entries by date
+    entries.sort((a, b) => {
+        if (!a.log.date || !b.log.date) return 0;
+        return b.log.date.getTime() - a.log.date.getTime();
+    });
 
-    for (const entry of entries) {
-        const date = await db.query.logs.findFirst({ where: eq(logs.id, entry.log_id) }).then(log => log?.date);
-        response += `## ${entry.subject} - ${date?.toDateString()}\n${entry.body}\n`;
-    }
+    const pagination = new Pagination(interaction, {
+        limit: 5,
+        loop: true,
+    });
 
-    response += "```";
+    pagination.setTitle(`Entries found for ${value}`);
 
-    await interaction.reply({ content: response, ephemeral: true });
-}
+    const fields: APIEmbedField[] = entries.map((entry) => ({
+        name: `${entry.subject} - ${entry.log.date?.toDateString()}`,
+        value: entry.body,
+    }));
 
-const execute = async (interaction: CommandInteraction) => {
+    pagination.setFields(fields);
+    pagination.paginateFields();
+    pagination.render();
+};
+
+const execute = async (interaction: ChatInputCommandInteraction) => {
     const query_value = interaction.options.get("query", true).value;
     const value = interaction.options.get("value", true).value as string;
 
@@ -86,9 +129,12 @@ const execute = async (interaction: CommandInteraction) => {
             await moduleSearch(interaction, value);
             break;
         default:
-            await interaction.reply({ content: "Invalid query", ephemeral: true });
-            return
+            await interaction.reply({
+                content: "Invalid query",
+                flags: MessageFlags.Ephemeral,
+            });
+            return;
     }
-}
+};
 
-export const search: Command = { cmd, execute }
+export const search: Command = { cmd, execute };

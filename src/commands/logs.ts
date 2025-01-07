@@ -1,4 +1,9 @@
-import { ApplicationCommandType, ContextMenuCommandBuilder, MessageContextMenuCommandInteraction } from "discord.js";
+import {
+    ApplicationCommandType,
+    ContextMenuCommandBuilder,
+    MessageContextMenuCommandInteraction,
+    MessageFlags,
+} from "discord.js";
 import type { Command } from ".";
 import { db } from "../db";
 import { logEntries, logs as logs_table } from "../db/schema";
@@ -8,18 +13,20 @@ import { formatDate, stringToDate } from "../utils";
 const cmd = new ContextMenuCommandBuilder()
     .setName("log")
     // @ts-ignore
-    .setType(ApplicationCommandType.Message)
+    .setType(ApplicationCommandType.Message);
 
 const execute = async (interaction: MessageContextMenuCommandInteraction) => {
     // We only want to let admins use this command
     if (!interaction.memberPermissions?.has("Administrator")) {
-        await interaction.reply({ content: "You need to be an admin to use this command!", ephemeral: true });
+        await interaction.reply({
+            content: "You need to be an admin to use this command!",
+            flags: MessageFlags.Ephemeral,
+        });
         return;
     }
 
-
     // Parse markdown into a format we understand
-    const message = interaction.targetMessage.content.replaceAll("```", "")
+    const message = interaction.targetMessage.content.replaceAll("```", "");
 
     /** Get contents of markdown
      *
@@ -39,7 +46,6 @@ const execute = async (interaction: MessageContextMenuCommandInteraction) => {
         }
 
         if (line.startsWith("## ")) {
-
             if (currentKey !== "") {
                 contents.set(currentKey, currentValue.trim());
             }
@@ -55,16 +61,16 @@ const execute = async (interaction: MessageContextMenuCommandInteraction) => {
         contents.set(currentKey, currentValue);
     }
 
-    // Check if we found any logs 
+    // Check if we found any logs
     if (contents.size === 0) {
         await interaction.reply("No logs found!");
         return;
     }
 
-    // Get the date of the log by regex 
+    // Get the date of the log by regex
     const content_date = message.match(/# (.*)\n/);
 
-    // Check for valid date 
+    // Check for valid date
     let date = new Date();
 
     if (content_date) {
@@ -79,29 +85,54 @@ const execute = async (interaction: MessageContextMenuCommandInteraction) => {
     date.setHours(0, 0, 0, 0);
 
     // Check if logs already exist for this date
-    const existingLogs = await db.select().from(logs_table).where(eq(logs_table.date, date)).execute();
+    const existingLogs = await db
+        .select()
+        .from(logs_table)
+        .where(eq(logs_table.date, date))
+        .execute();
 
     if (existingLogs.length > 0) {
-        await db.delete(logEntries).where(eq(logEntries.log_id, existingLogs[0].id)).execute();
+        await db
+            .delete(logEntries)
+            .where(eq(logEntries.log_id, existingLogs[0].id))
+            .execute();
 
         for (const [key, value] of contents) {
-            await db.insert(logEntries).values({ log_id: existingLogs[0].id, subject: key, body: value }).execute();
+            await db
+                .insert(logEntries)
+                .values({
+                    log_id: existingLogs[0].id,
+                    subject: key,
+                    body: value,
+                })
+                .execute();
         }
 
-        await interaction.reply(`Logs already exist for ${formatDate(date)}, updated entries!`);
+        await interaction.reply(
+            `Logs already exist for ${formatDate(date)}, updated entries!`,
+        );
         return;
     }
 
     // Save logs to database
     const user = interaction.user.tag;
-    let currentDate = await db.insert(logs_table).values({ user, date }).returning({ id: logs_table.id }).execute().then((result) => result[0]);
+    let currentDate = await db
+        .insert(logs_table)
+        .values({ user, date })
+        .returning({ id: logs_table.id })
+        .execute()
+        .then((result) => result[0]);
 
     for (const [key, value] of contents) {
-        await db.insert(logEntries).values({ log_id: currentDate.id, subject: key, body: value }).execute();
+        await db
+            .insert(logEntries)
+            .values({ log_id: currentDate.id, subject: key, body: value })
+            .execute();
     }
 
+    await interaction.reply(
+        `Saved ${contents.size} logs for ${formatDate(date)}!`,
+    );
+};
 
-    await interaction.reply(`Saved ${contents.size} logs for ${formatDate(date)}!`);
-}
-
-export const logs: Command = { cmd, execute }
+export const logs: Command = { cmd, execute };

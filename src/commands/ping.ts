@@ -7,6 +7,6 @@ const cmd = new SlashCommandBuilder()
 
 const execute = async (interaction: CommandInteraction) => {
     await interaction.reply(`Ping is ${interaction.client.ws.ping}ms`);
-}
+};
 
-export const ping: Command = { cmd, execute }
+export const ping: Command = { cmd, execute };

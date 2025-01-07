@@ -1,6 +1,6 @@
 export const formatDate = (date: Date) => {
     return `${date.getDate()}/${date.getUTCMonth() + 1}/${date.getFullYear()}`;
-}
+};
 
 export const stringToDate = (date: string) => {
     const parts = date.split("/");
@@ -9,5 +9,9 @@ export const stringToDate = (date: string) => {
         return new Date(date);
     }
 
-    return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-}
+    return new Date(
+        parseInt(parts[2]),
+        parseInt(parts[1]) - 1,
+        parseInt(parts[0]),
+    );
+};
