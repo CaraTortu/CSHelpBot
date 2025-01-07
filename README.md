@@ -1,7 +1,5 @@
 # discord_bot
 
-**IMPORTANT: BUN IS REQUIRED** 
-
 To install dependencies:
 
 ```bash

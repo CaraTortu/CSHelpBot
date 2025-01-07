@@ -1,8 +1,9 @@
-import { env } from "bun";
+import { configDotenv } from "dotenv";
 import { commands } from "./commands";
 import { Client, MessageFlags, REST, Routes } from "discord.js";
 
-const { DISCORD_TOKEN, DISCORD_CLIENT_ID } = env;
+configDotenv();
+const { DISCORD_TOKEN, DISCORD_CLIENT_ID } = process.env;
 
 if (!DISCORD_TOKEN || !DISCORD_CLIENT_ID) {
     throw new Error("Missing environment variables");
