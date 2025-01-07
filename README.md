@@ -18,6 +18,6 @@ In the case of wanting to run using node
 
 ```bash
 npm run build
-npm run run
+npm run start 
 ```
 

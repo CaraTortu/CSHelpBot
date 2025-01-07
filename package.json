@@ -3,7 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "run": "node dist/src/index.js",
+    "start": "node dist/src/index.js",
     "build": "tsc --build && tsc-alias",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
@@ -13,8 +13,7 @@
   "devDependencies": {
     "@types/pg": "^8.11.10",
     "drizzle-kit": "^0.28.1",
-    "tsc-alias": "1.8.10",
-    "tsx": "^4.19.2"
+    "tsc-alias": "1.8.10"
   },
   "peerDependencies": {
     "typescript": "^5.7.2"
