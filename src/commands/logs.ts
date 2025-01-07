@@ -41,6 +41,14 @@ const execute = async (interaction: MessageContextMenuCommandInteraction) => {
     let currentKey = "";
     let currentValue = "";
     for (const line of message.split("\n")) {
+        if (contents.has(currentKey)) {
+            await interaction.reply({
+                content: `Duplicate key found: ${currentKey.trim()}. Only one entry per key is allowed!`,
+                flags: MessageFlags.Ephemeral,
+            });
+            return;
+        }
+
         if (line === "" || line === "\n") {
             continue;
         }
