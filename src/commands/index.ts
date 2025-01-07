@@ -10,6 +10,7 @@ import type {
 import { logs } from "./logs";
 import { search } from "./search";
 import { all } from "./all";
+import { deleteEntry } from "./deleteEntry";
 
 export type Command =
     | {
@@ -32,4 +33,5 @@ export const commands: Command[] = [
     logs,
     search,
     all,
+    deleteEntry,
 ];
